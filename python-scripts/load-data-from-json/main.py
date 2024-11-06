@@ -3,7 +3,6 @@
 import requests
 import pandas as pd
 import numpy as np
-import helpers as hp # cant run interactively for some reason.
 import helpers_sql as hpsql # cant run interactively for some reason.
 import argparse
 import logging
@@ -31,8 +30,10 @@ def main(schema_name, table_name):
 
     logging.info(f"Schema Name: {schema_name}")
     logging.info(f"Table Name: {table_name}")
+    
+    
     # -------------------------------
-    # Sample data
+    # Sample data for HectreDW.Dim_Date
     data = {
         'DateID': [1, 2],
         'Date': ['2024-11-06', '2024-11-07'],
