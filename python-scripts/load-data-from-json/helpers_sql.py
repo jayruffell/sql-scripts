@@ -134,26 +134,27 @@ def create_tables_from_json(json_file_path):
     df_bridge_bin_picker = pd.DataFrame(bridge_bin_picker_data)
 
     # **Fact Tables**:
-    # 7. Create FactSample (SampleID - BinID - DefectID - PerformanceScore - TotalPickers)
+    # 7. Create FactSample (SampleID - BinID - TotalPickers)
     fact_sample_data = []
     for sample in json_data["samples"]:
-        for defect in sample["defects"]:
-            defect_id = df_dim_defect[df_dim_defect["DefectType"] == defect["name"]].iloc[0]["DefectID"]
-            total_pickers = len(sample["pickers"])
-            fact_sample_data.append({
-                "SampleID": sample["id"],
-                "BinID": sample["binId"],
-                "DefectID": defect_id,
-                "PerformanceScore": defect["percent"],
-                "TotalPickers": total_pickers
-            })
-    
+        total_pickers = len(sample["pickers"])
+        total_performance = sum(defect["percent"] for defect in sample["defects"])  # Sum of defect performance scores
+        
+        # We add the SampleID, BinID, and TotalPickers, but no DefectID here
+        fact_sample_data.append({
+            "SampleID": sample["id"],
+            "BinID": sample["binId"],
+            "TotalPickers": total_pickers,
+            "TotalPerformance": total_performance,
+        })
+
     df_fact_sample = pd.DataFrame(fact_sample_data)
 
-    # 8. Create FactBin (BinID - TotalPickers)
+    # 8. Create FactBin (BinID - TotalPickers - Variety)
     fact_bin_data = []
     for bin_data in json_data["bins"]:
         total_pickers = len(bin_data["pickers"])
+        # Add BinID, TotalPickers, and Variety (foreign key to DimBin)
         fact_bin_data.append({
             "BinID": bin_data["binId"],
             "TotalPickers": total_pickers

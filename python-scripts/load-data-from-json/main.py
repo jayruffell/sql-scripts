@@ -26,10 +26,19 @@ def main(schema_name):
 
     logging.info("converting json file to dims and facts")
 
-    dims_and_facts_dfs = hpsql.create_tbls_from_json("C:\dev\hectre-test\data.json")
+    tables = hpsql.create_tables_from_json("C:\dev\hectre-test\data.json")
+    
+    print(tables['DimPicker'])
+    print(tables['DimDefect'])
+    print(tables['DimBin'])
+    print(tables['BridgeSampleDefect'])
+    print(tables['BridgeSamplePicker'])
+    print(tables['BridgeBinPicker'])
+    print(tables['FactSample'])
+    print(tables['FactBin'])
     
     logging.info("iterating thru each df and save to corresponding table name")
-    for table_name, df in dims_and_facts_dfs.items():
+    for table_name, df in tables.items():
         success = hpsql.save_df_to_db(
             df=df,
             schema_name=schema_name,
@@ -39,9 +48,9 @@ def main(schema_name):
         print(f"Table {table_name} save success: {success}")
 
     # success = hpsql.save_df_to_db(
-    #     df = list(dims_and_facts_dfs.values())[0],
+    #     df = list(tables.values())[0],
     #     schema_name = schema_name,
-    #     table_name = list(dims_and_facts_dfs.keys())[0])
+    #     table_name = list(tables.keys())[0])
     # return success
 
 # Notes on below, from chatgpt
