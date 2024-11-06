@@ -1,0 +1,5 @@
+USE HectreDW;
+GO
+
+CREATE SCHEMA QA;
+GO
