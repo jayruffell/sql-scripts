@@ -29,8 +29,6 @@ logging.basicConfig(
 def main(start_year_for_db, end_year_for_db_excl, schema_name, table_name):
     """pull one year of holidays by date from an api (only a few years' data available), convert to a many-year dataframe and a flag for hol or not, and save to SQL Server (behavour set to REPLACE any existing table). Returns True if successful and False otherwise."""
 
-    logging.info(f"Start Date: {start_year_for_db}")
-    logging.info(f"End Date: {end_year_for_db_excl}")
     logging.info(f"Schema Name: {schema_name}")
     logging.info(f"Table Name: {table_name}")
 
@@ -61,7 +59,25 @@ def main(start_year_for_db, end_year_for_db_excl, schema_name, table_name):
     # join public hols df with a full df of all dates, and a flag for public hol or not
     final_hols_df = hp.create_full_df(start_year_for_db, end_year_for_db_excl, all_hols_df)
 
-    success = hpsql.save_to_db(final_hols_df, schema_name, table_name)
+    # -------------------------------
+    # Sample data
+    data = {
+        'DateID': [1, 2],
+        'Date': ['2024-11-06', '2024-11-07'],
+        'Year': [2024, 2024],
+        'Month': [11, 12],
+        'Day': [1, 1],
+    }
+
+    # Create DataFrame
+    sample_df = pd.DataFrame(data)
+
+    # Ensure the 'Date' column is of datetime type
+    sample_df['Date'] = pd.to_datetime(sample_df['Date'])
+    print(sample_df)
+    # -------------------------------
+
+    success = hpsql.save_df_to_db(sample_df, schema_name, table_name)
     return success
 
 # Notes on below, from chatgpt
