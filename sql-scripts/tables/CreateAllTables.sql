@@ -3,44 +3,50 @@
 USE HectreDW;
 GO
 
--- Dimension Tables
-CREATE TABLE Dim_Picker (
-    PickerID NVARCHAR(50) PRIMARY KEY,
-    Name NVARCHAR(100)
+-- CREATE TABLE for DimPicker
+CREATE TABLE [dbo].[DimPicker] (
+    [PickerID] INT,
+    [PickerName] NVARCHAR(MAX)
 );
 
-CREATE TABLE Dim_Bin (
-    BinID NVARCHAR(50) PRIMARY KEY,
-    Block NVARCHAR(50),
-    Variety NVARCHAR(50)
+-- CREATE TABLE for DimDefect
+CREATE TABLE [dbo].[DimDefect] (
+    [DefectID] INT,
+    [DefectType] NVARCHAR(MAX)
 );
 
-CREATE TABLE Dim_Defect (
-    DefectID INT PRIMARY KEY IDENTITY(1,1),
-    Name NVARCHAR(50)
+-- CREATE TABLE for BridgeSamplePicker
+CREATE TABLE [dbo].[BridgeSamplePicker] (
+    [SampleID] INT,
+    [PickerID] INT
 );
 
-CREATE TABLE Dim_Date (
-    DateID INT PRIMARY KEY,
-    Date DATE,
-    Year INT,
-    Month INT,
-    Day INT
+-- CREATE TABLE for BridgeSampleDefect
+CREATE TABLE [dbo].[BridgeSampleDefect] (
+    [SampleID] INT,
+    [DefectID] INT,
+    [DefectPercent] FLOAT
 );
 
--- Fact Tables (No Foreign Keys)
-CREATE TABLE Fact_Picking (
-    PickingID INT PRIMARY KEY IDENTITY(1,1),
-    BinID NVARCHAR(50), 
-    PickerID NVARCHAR(50),
-    Block NVARCHAR(50),
-    DateID INT
+-- CREATE TABLE for BridgeBinPicker
+CREATE TABLE [dbo].[BridgeBinPicker] (
+    [BinID] INT,
+    [PickerID] INT
 );
 
-CREATE TABLE Fact_Sampling (
-    SampleID NVARCHAR(50) PRIMARY KEY,
-    BinID NVARCHAR(50),
-    DefectID INT,
-    [Percent] INT,
-    DateID INT
+-- CREATE TABLE for FactSample
+CREATE TABLE [dbo].[FactSample] (
+    [SampleID] INT,
+    [BinID] INT,
+    [TotalPickers] INT,
+    [TotalDefectPercent] FLOAT
+);
+
+-- CREATE TABLE for FactBin
+CREATE TABLE [dbo].[FactBin] (
+    [BinID] INT,
+    [Block] NVARCHAR(MAX),
+    [Variety] NVARCHAR(MAX),
+    [CreatedDate] DATETIME,
+    [TotalPickers] INT
 );

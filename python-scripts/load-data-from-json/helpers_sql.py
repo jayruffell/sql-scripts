@@ -106,7 +106,7 @@ def create_tables_from_json(json_file_path):
             bridge_sample_defect_data.append({
                 "SampleID": sample["id"],
                 "DefectID": defect_id,
-                "PerformanceScore": defect["percent"]
+                "DefectPercent": defect["percent"]
             })
 
     df_bridge_sample_defect = pd.DataFrame(bridge_sample_defect_data)
@@ -127,14 +127,14 @@ def create_tables_from_json(json_file_path):
     fact_sample_data = []
     for sample in json_data["samples"]:
         total_pickers = len(sample["pickers"])
-        total_performance = sum(defect["percent"] for defect in sample["defects"])  # Sum of defect performance scores
+        total_defect_percent = sum(defect["percent"] for defect in sample["defects"])  # Sum of defect performance scores
 
         # We add the SampleID, BinID, and TotalPickers, but no DefectID here
         fact_sample_data.append({
             "SampleID": sample["id"],
             "BinID": sample["binId"],
             "TotalPickers": total_pickers,
-            "TotalPerformance": total_performance,
+            "TotalDefectPercent": total_defect_percent,
         })
 
     df_fact_sample = pd.DataFrame(fact_sample_data)
