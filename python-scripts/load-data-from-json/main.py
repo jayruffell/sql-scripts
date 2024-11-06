@@ -21,43 +21,28 @@ logging.basicConfig(
     ]
 )
 
-def main(schema_name, table_name):
+def main(schema_name):
     """Placeholder docstring"""
 
-    logging.info(f"Schema Name: {schema_name}")
-    
     logging.info("converting json file to dims and facts")
 
     dims_and_facts_dfs = hpsql.create_tbls_from_json("C:\dev\hectre-test\data.json")
-    print(dims_and_facts_dfs['Dim_Date'])
-    print(dims_and_facts_dfs.items())
-    # iterate thru each df and save to corresponding table name
     
-    list(dims_and_facts_dfs.keys())
-    list(dims_and_facts_dfs.keys())[0]
-    list(dims_and_facts_dfs.values())[0]
-    logging.info(f"Table Name: {table_name}")
+    logging.info("iterating thru each df and save to corresponding table name")
+    for table_name, df in dims_and_facts_dfs.items():
+        success = hpsql.save_df_to_db(
+            df=df,
+            schema_name=schema_name,
+            table_name=table_name
+        )
+        # Optional: Print or log success/failure
+        print(f"Table {table_name} save success: {success}")
 
-    
-    #     # EXAMPLE USAGE - Sample data for HectreDW.Dim_Date
-    # data = {
-    #     'DateID': [1, 2],
-    #     'Date': ['2024-11-06', '2024-11-07'],
-    #     'Year': [2024, 2024],
-    #     'Month': [11, 12],
-    #     'Day': [1, 1],
-    # }
-    # sample_df = pd.DataFrame(data)
-
-    # # Ensure the 'Date' column is of datetime type
-    # sample_df['Date'] = pd.to_datetime(sample_df['Date'])
-    # print(sample_df)
-
-    success = hpsql.save_df_to_db(
-        df = list(dims_and_facts_dfs.values())[0],
-        schema_name = schema_name,
-        table_name = list(dims_and_facts_dfs.keys())[0])
-    return success
+    # success = hpsql.save_df_to_db(
+    #     df = list(dims_and_facts_dfs.values())[0],
+    #     schema_name = schema_name,
+    #     table_name = list(dims_and_facts_dfs.keys())[0])
+    # return success
 
 # Notes on below, from chatgpt
 # -- "The if __name__ == "__main__": block ensures that the main() function runs only when the script is executed directly, not when imported as a module. This is a common pattern in Python."
@@ -65,7 +50,6 @@ def main(schema_name, table_name):
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Process start and end dates.")
     parser.add_argument("schema_name", type=str)
-    parser.add_argument("table_name", type=str)
     args = parser.parse_args()
 
-    main(args.schema_name, args.table_name)
+    main(args.schema_name)

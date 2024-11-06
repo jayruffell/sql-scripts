@@ -43,10 +43,10 @@ def save_df_to_db(df, schema_name, table_name):
     logging.info(f"connection string: {connection_string_sqlalchemy}")
     engine = create_engine(connection_string_sqlalchemy)
 
-    # TEST CONNECTION IF DESIRED
-    query = "SELECT TOP 10 * FROM dbo.Dim_Date"
-    test_df = pd.read_sql(query, engine)
-    logging.info(test_df)
+    # # TEST CONNECTION IF DESIRED
+    # query = "SELECT TOP 10 * FROM dbo.Dim_Date"
+    # test_df = pd.read_sql(query, engine)
+    # logging.info(test_df)
 
     try:
         df.to_sql(
@@ -173,5 +173,5 @@ def create_tbls_from_json(json_file_path):
         "Dim_Defect": df_dim_defect,
         "Dim_Date": df_dim_date,
         "Fact_Picking": df_fact_picking,
-        "Sact_Sampling": df_fact_sampling,
+        "Fact_Sampling": df_fact_sampling,
     }
