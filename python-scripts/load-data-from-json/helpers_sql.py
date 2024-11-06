@@ -86,18 +86,6 @@ def create_tables_from_json(json_file_path):
 
     df_dim_defect = pd.DataFrame({"DefectID": range(1, len(defects) + 1), "DefectType": list(defects)})
 
-    # 3. Create DimBin
-    dim_bin_data = []
-    for bin_data in json_data["bins"]:
-        for picker_id in bin_data["pickers"]:
-            dim_bin_data.append({
-                "BinID": bin_data["binId"],
-                "BinLocation": bin_data["block"],
-                "Variety": bin_data["variety"]
-            })
-
-    df_dim_bin = pd.DataFrame(dim_bin_data).drop_duplicates() 
-
     # 4. Create BridgeSamplePicker (SampleID - PickerID)
     bridge_sample_picker_data = []
     for sample in json_data["samples"]:
@@ -109,7 +97,8 @@ def create_tables_from_json(json_file_path):
 
     df_bridge_sample_picker = pd.DataFrame(bridge_sample_picker_data)
 
-    # 5. Create BridgeSampleDefect (SampleID - DefectID)
+    # 5. Create BridgeSampleDefect
+    # NOTE currently excludes samples with zero defects. Appropriate? Parked for now.
     bridge_sample_defect_data = []
     for sample in json_data["samples"]:
         for defect in sample["defects"]:
@@ -134,12 +123,12 @@ def create_tables_from_json(json_file_path):
     df_bridge_bin_picker = pd.DataFrame(bridge_bin_picker_data)
 
     # **Fact Tables**:
-    # 7. Create FactSample (SampleID - BinID - TotalPickers)
+    # 7. Create FactSample. Note no createdDate cos matches FactBin.
     fact_sample_data = []
     for sample in json_data["samples"]:
         total_pickers = len(sample["pickers"])
         total_performance = sum(defect["percent"] for defect in sample["defects"])  # Sum of defect performance scores
-        
+
         # We add the SampleID, BinID, and TotalPickers, but no DefectID here
         fact_sample_data.append({
             "SampleID": sample["id"],
@@ -150,13 +139,16 @@ def create_tables_from_json(json_file_path):
 
     df_fact_sample = pd.DataFrame(fact_sample_data)
 
-    # 8. Create FactBin (BinID - TotalPickers - Variety)
+    # 8. Create FactBin
     fact_bin_data = []
     for bin_data in json_data["bins"]:
         total_pickers = len(bin_data["pickers"])
         # Add BinID, TotalPickers, and Variety (foreign key to DimBin)
         fact_bin_data.append({
             "BinID": bin_data["binId"],
+            "Block": bin_data["block"],
+            "Variety": bin_data["variety"],
+            "CreatedDate": bin_data["createdDate"],
             "TotalPickers": total_pickers
         })
 
@@ -165,7 +157,6 @@ def create_tables_from_json(json_file_path):
     return {
         "DimPicker": df_dim_picker,
         "DimDefect": df_dim_defect,
-        "DimBin": df_dim_bin,
         "BridgeSamplePicker": df_bridge_sample_picker,
         "BridgeSampleDefect": df_bridge_sample_defect,
         "BridgeBinPicker": df_bridge_bin_picker,

@@ -30,7 +30,6 @@ def main(schema_name):
     
     print(tables['DimPicker'])
     print(tables['DimDefect'])
-    print(tables['DimBin'])
     print(tables['BridgeSampleDefect'])
     print(tables['BridgeSamplePicker'])
     print(tables['BridgeBinPicker'])
