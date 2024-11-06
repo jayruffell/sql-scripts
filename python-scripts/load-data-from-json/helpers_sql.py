@@ -40,14 +40,14 @@ def save_df_to_db(df, schema_name, table_name):
         "trustServerCertificate=yes"
     )
     # connection_string_sqlalchemy = connection_string_sqlalchemy.replace("'", "")
-    logging.info(f"connection string: {connection_string_sqlalchemy}")
+    # logging.info(f"connection string: {connection_string_sqlalchemy}")
     engine = create_engine(connection_string_sqlalchemy)
 
     # # TEST CONNECTION IF DESIRED
     # query = "SELECT TOP 10 * FROM dbo.Dim_Date"
     # test_df = pd.read_sql(query, engine)
     # logging.info(test_df)
-
+    logging.info(print(df))
     try:
         df.to_sql(
             table_name, con=engine, schema=schema_name, if_exists="replace", index=False
@@ -64,114 +64,111 @@ def save_df_to_db(df, schema_name, table_name):
         logging.info("db operation failed.")
     return operation_successful
 
+def create_tables_from_json(json_file_path):
+    """Creates DataFrames for dimension, bridge, and fact tables from the raw JSON data."""
 
-def create_tbls_from_json(json_file_path):
-    """read json data and create dims and facts as a dictionary (accessible as e.g. 'result[['dim_picker']]"""
-
-    # # Usage example:
-    # result = create_tbls_from_json("C:\dev\hectre-test\data.json")
-    # # Access the DataFrames
-    # print(result["dim_picker"])
-    # print(result["dim_bin"])
-
-    # Load JSON data from the file
+        # Load JSON data from the file
     with open(json_file_path, 'r') as file:
         json_data = json.load(file)
 
-    # 1. Create Dim_Picker
-    pickers_data = [
-        {"PickerID": picker["id"], "Name": picker["name"]}
+    # 1. Create DimPicker
+    dim_picker_data = [
+        {"PickerID": picker["id"], "PickerName": picker["name"]}
         for picker in json_data["pickers"]
     ]
-    df_dim_picker = pd.DataFrame(pickers_data)
+    df_dim_picker = pd.DataFrame(dim_picker_data)
 
-    # 2. Create Dim_Bin
-    bins_data = []
-    for bin_data in json_data["bins"]:
-        for picker_id in bin_data["pickers"]:
-            bins_data.append(
-                {
-                    "BinID": bin_data["binId"],
-                    "Block": bin_data["block"],
-                    "Variety": bin_data["variety"],
-                }
-            )
-    df_dim_bin = pd.DataFrame(bins_data)
-
-    # 3. Create Dim_Defect
+    # 2. Create DimDefect
     defects = set()
     for sample in json_data["samples"]:
         for defect in sample["defects"]:
             defects.add(defect["name"])
-    df_dim_defect = pd.DataFrame({"Name": list(defects)})
 
-    # 4. Create Dim_Date
-    dates = []
-    for bin_data in json_data["bins"]:
-        created_date = datetime.strptime(
-            bin_data["createdDate"], "%d/%m/%Y %I:%M:%S %p"
-        )
-        dates.append(
-            {
-                "DateID": created_date.year * 10000
-                + created_date.month * 100
-                + created_date.day,
-                "Date": created_date.date(),
-                "Year": created_date.year,
-                "Month": created_date.month,
-                "Day": created_date.day,
-            }
-        )
-    df_dim_date = pd.DataFrame(dates)
+    df_dim_defect = pd.DataFrame({"DefectID": range(1, len(defects) + 1), "DefectType": list(defects)})
 
-    # 5. Create Fact_Picking
-    fact_picking_data = []
+    # 3. Create DimBin
+    dim_bin_data = []
     for bin_data in json_data["bins"]:
         for picker_id in bin_data["pickers"]:
-            created_date = datetime.strptime(
-                bin_data["createdDate"], "%d/%m/%Y %I:%M:%S %p"
-            )
-            date_id = (
-                created_date.year * 10000 + created_date.month * 100 + created_date.day
-            )
-            fact_picking_data.append(
-                {
-                    "BinID": bin_data["binId"],
-                    "PickerID": picker_id,
-                    "Block": bin_data["block"],
-                    "DateID": date_id,
-                }
-            )
-    df_fact_picking = pd.DataFrame(fact_picking_data)
+            dim_bin_data.append({
+                "BinID": bin_data["binId"],
+                "BinLocation": bin_data["block"],
+                "Variety": bin_data["variety"]
+            })
 
-    # 6. Create Fact_Sampling
-    fact_sampling_data = []
+    df_dim_bin = pd.DataFrame(dim_bin_data).drop_duplicates() 
+
+    # 4. Create BridgeSamplePicker (SampleID - PickerID)
+    bridge_sample_picker_data = []
     for sample in json_data["samples"]:
-        created_date = datetime.strptime(sample["createdDate"], "%d/%m/%Y %I:%M:%S %p")
-        date_id = (
-            created_date.year * 10000 + created_date.month * 100 + created_date.day
-        )
-        for defect in sample["defects"]:
-            fact_sampling_data.append(
-                {
-                    "SampleID": sample["id"],
-                    "BinID": sample["binId"],
-                    "DefectID": df_dim_defect[
-                        df_dim_defect["Name"] == defect["name"]
-                    ].index[0]
-                    + 1,  # Using index to get DefectID
-                    "Percent": defect["percent"],
-                    "DateID": date_id,
-                }
-            )
-    df_fact_sampling = pd.DataFrame(fact_sampling_data)
+        for picker_id in sample["pickers"]:
+            bridge_sample_picker_data.append({
+                "SampleID": sample["id"],
+                "PickerID": picker_id
+            })
 
-    # Return as a dictionary (can be accessed like result['dim_picker'])
+    df_bridge_sample_picker = pd.DataFrame(bridge_sample_picker_data)
+
+    # 5. Create BridgeSampleDefect (SampleID - DefectID)
+    bridge_sample_defect_data = []
+    for sample in json_data["samples"]:
+        for defect in sample["defects"]:
+            defect_id = df_dim_defect[df_dim_defect["DefectType"] == defect["name"]].iloc[0]["DefectID"]
+            bridge_sample_defect_data.append({
+                "SampleID": sample["id"],
+                "DefectID": defect_id,
+                "PerformanceScore": defect["percent"]
+            })
+
+    df_bridge_sample_defect = pd.DataFrame(bridge_sample_defect_data)
+
+    # 6. Create BridgeBinPicker (BinID - PickerID)
+    bridge_bin_picker_data = []
+    for bin_data in json_data["bins"]:
+        for picker_id in bin_data["pickers"]:
+            bridge_bin_picker_data.append({
+                "BinID": bin_data["binId"],
+                "PickerID": picker_id
+            })
+
+    df_bridge_bin_picker = pd.DataFrame(bridge_bin_picker_data)
+
+    # **Fact Tables**:
+    # 7. Create FactSample (SampleID - BinID - DefectID - PerformanceScore - TotalPickers)
+    fact_sample_data = []
+    for sample in json_data["samples"]:
+        for defect in sample["defects"]:
+            defect_id = df_dim_defect[df_dim_defect["DefectType"] == defect["name"]].iloc[0]["DefectID"]
+            total_pickers = len(sample["pickers"])
+            fact_sample_data.append({
+                "SampleID": sample["id"],
+                "BinID": sample["binId"],
+                "DefectID": defect_id,
+                "PerformanceScore": defect["percent"],
+                "TotalPickers": total_pickers
+            })
+    
+    df_fact_sample = pd.DataFrame(fact_sample_data)
+
+    # 8. Create FactBin (BinID - TotalPickers)
+    fact_bin_data = []
+    for bin_data in json_data["bins"]:
+        total_pickers = len(bin_data["pickers"])
+        fact_bin_data.append({
+            "BinID": bin_data["binId"],
+            "TotalPickers": total_pickers
+        })
+
+    df_fact_bin = pd.DataFrame(fact_bin_data)
+
     return {
-        "Dim_Picker": df_dim_picker,
-        "Dim_Bin": df_dim_bin,
-        "Dim_Defect": df_dim_defect,
-        "Dim_Date": df_dim_date,
-        "Fact_Picking": df_fact_picking,
-        "Fact_Sampling": df_fact_sampling,
+        "DimPicker": df_dim_picker,
+        "DimDefect": df_dim_defect,
+        "DimBin": df_dim_bin,
+        "BridgeSamplePicker": df_bridge_sample_picker,
+        "BridgeSampleDefect": df_bridge_sample_defect,
+        "BridgeBinPicker": df_bridge_bin_picker,
+        "FactSample": df_fact_sample,
+        "FactBin": df_fact_bin
     }
+
