@@ -21,36 +21,42 @@ logging.basicConfig(
     ]
 )
 
-# # TEMP troubleshooting environmental variable differences between  manual powershell runs and task scheduler
-# for key, value in os.environ.items():
-#     logging.info(f"{key}={value}")
-
 def main(schema_name, table_name):
     """Placeholder docstring"""
 
     logging.info(f"Schema Name: {schema_name}")
+    
+    logging.info("converting json file to dims and facts")
+
+    dims_and_facts_dfs = hpsql.create_tbls_from_json("C:\dev\hectre-test\data.json")
+    print(dims_and_facts_dfs['Dim_Date'])
+    print(dims_and_facts_dfs.items())
+    # iterate thru each df and save to corresponding table name
+    
+    list(dims_and_facts_dfs.keys())
+    list(dims_and_facts_dfs.keys())[0]
+    list(dims_and_facts_dfs.values())[0]
     logging.info(f"Table Name: {table_name}")
+
     
-    
-    # -------------------------------
-    # Sample data for HectreDW.Dim_Date
-    data = {
-        'DateID': [1, 2],
-        'Date': ['2024-11-06', '2024-11-07'],
-        'Year': [2024, 2024],
-        'Month': [11, 12],
-        'Day': [1, 1],
-    }
+    #     # EXAMPLE USAGE - Sample data for HectreDW.Dim_Date
+    # data = {
+    #     'DateID': [1, 2],
+    #     'Date': ['2024-11-06', '2024-11-07'],
+    #     'Year': [2024, 2024],
+    #     'Month': [11, 12],
+    #     'Day': [1, 1],
+    # }
+    # sample_df = pd.DataFrame(data)
 
-    # Create DataFrame
-    sample_df = pd.DataFrame(data)
+    # # Ensure the 'Date' column is of datetime type
+    # sample_df['Date'] = pd.to_datetime(sample_df['Date'])
+    # print(sample_df)
 
-    # Ensure the 'Date' column is of datetime type
-    sample_df['Date'] = pd.to_datetime(sample_df['Date'])
-    print(sample_df)
-    # -------------------------------
-
-    success = hpsql.save_df_to_db(sample_df, schema_name, table_name)
+    success = hpsql.save_df_to_db(
+        df = list(dims_and_facts_dfs.values())[0],
+        schema_name = schema_name,
+        table_name = list(dims_and_facts_dfs.keys())[0])
     return success
 
 # Notes on below, from chatgpt
