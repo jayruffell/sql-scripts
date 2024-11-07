@@ -111,7 +111,7 @@ def create_tables_from_json(json_file_path):
 
     df_bridge_sample_defect = pd.DataFrame(bridge_sample_defect_data)
 
-    # 6. Create BridgeBinPicker (BinID - PickerID)
+    # 6. Create BridgeBinPicker
     bridge_bin_picker_data = []
     for bin_data in json_data["bins"]:
         for picker_id in bin_data["pickers"]:
@@ -127,9 +127,8 @@ def create_tables_from_json(json_file_path):
     fact_sample_data = []
     for sample in json_data["samples"]:
         total_pickers = len(sample["pickers"])
-        total_defect_percent = sum(defect["percent"] for defect in sample["defects"])  # Sum of defect performance scores
+        total_defect_percent = sum(defect["percent"] for defect in sample["defects"])
 
-        # We add the SampleID, BinID, and TotalPickers, but no DefectID here
         fact_sample_data.append({
             "SampleID": sample["id"],
             "BinID": sample["binId"],
@@ -143,7 +142,6 @@ def create_tables_from_json(json_file_path):
     fact_bin_data = []
     for bin_data in json_data["bins"]:
         total_pickers = len(bin_data["pickers"])
-        # Add BinID, TotalPickers, and Variety (foreign key to DimBin)
         fact_bin_data.append({
             "BinID": bin_data["binId"],
             "Block": bin_data["block"],
